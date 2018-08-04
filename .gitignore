@@ -1,0 +1,12 @@
+#gitignore file, ignore all __pycache__ folders
+**/__pycache__
+#let's also ignore swap files
+*.swp
+#and .dia files I use for planning
+*.dia
+*.dia~
+#don't want to leak my api key either
+apikey
+saberconfig.ini
+responses
+config.ini.bak
