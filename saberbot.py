@@ -9,7 +9,7 @@ def main(config_file):
     config = configparser.ConfigParser()
     config.read(config_file)
     bot=SaberBot(description=config["saberbot"]["desc"])
-    bot.run(config["saberbot"][oauth])
+    bot.run(config["saberbot"]["oauth"])
 
 class SaberBot(commands.Bot):
     """the main class that contains the bot"""
