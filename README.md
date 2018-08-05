@@ -11,3 +11,9 @@ Also make sure you have installed discord.py, for example using `pip3`
 
 ### Dependencies ###
 * [discord.py](https://github.com/Rapptz/discord)
+
+### usage ###
+
+Make sure you have at minimum oauth key specified in config file.
+`python3 saberbot.py configfile`
+

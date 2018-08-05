@@ -2,25 +2,14 @@
 from discord.ext import commands
 import discord
 import datetime, asyncio
-import configparser, os
+import os, configparser
 
-def main():
-    """calls method to load the .ini config, then spawns new instance of bot and starts it"""
-    initialize_bot() 
-    bot=SaberBot(description=desc)
-    bot.run(oauth)
-
-def initialize_bot(config_path = "config.ini"):
-    """reads the user configurable values from .ini file, assumed to be on the root of folder
-    TODO: make parsing the actual input file more neat"""
-    global oauth, desc # just, like, find a better way to deal with oauth
-    config_path = os.getcwd() + "/" + config_path #bit ugly I'd guess but works
-    print(f"opening up config file from {config_path}")
-    cfg = configparser.ConfigParser()
-    cfg.read(config_path) #this bit also needs bit rewriting
-    cfg = cfg['saberbot'] #as config file grows
-    oauth = cfg['oauth']
-    desc = cfg['desc']
+def main(config_file):
+    """calls method to load the .ini/yaml-style config, then spawns new instance of bot and starts it"""
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    bot=SaberBot(description=config["saberbot"]["desc"])
+    bot.run(config["saberbot"][oauth])
 
 class SaberBot(commands.Bot):
     """the main class that contains the bot"""
@@ -30,6 +19,9 @@ class SaberBot(commands.Bot):
         self.__version__ = "0.1.0"
         self.loop.create_task(self.track_start()) #unused yet, will be used for timing stuff
         self.loop.create_task(self.load_extensions())
+
+    def get_version(self):
+        return self.__version__
     
     async def get_prefix_(self, bot, message):
         """defines the prefixes used for commands
@@ -65,5 +57,9 @@ class SaberBot(commands.Bot):
             return
         await self.process_commands(message)
 
-if __name__ == "__main__":  
-    main()
+if __name__ == "__main__":
+    try:
+        config_file = sys.argv[1]
+        main(config_file)
+    except NameError:
+        print("usage: saberbot.py <path_to_config_file>")

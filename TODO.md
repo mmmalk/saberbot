@@ -1,8 +1,6 @@
 # TODO #
 
-##features to implement(in no particular order)##
-* search wikipedia
-* search youtube
+### features to implement(in no particular order) ###
 * weather
 * search games
 	* search gog.com
