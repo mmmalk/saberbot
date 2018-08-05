@@ -2,14 +2,23 @@
 from discord.ext import commands
 import discord
 import datetime, asyncio
-import os, configparser
+import sys, configparser
 
 def main(config_file):
-    """calls method to load the .ini/yaml-style config, then spawns new instance of bot and starts it"""
+    """calls method to load the .ini-style config, then spawns new instance of bot and starts it"""
     config = configparser.ConfigParser()
-    config.read(config_file)
-    bot=SaberBot(description=config["saberbot"]["desc"])
-    bot.run(config["saberbot"]["oauth"])
+    #try:
+    with open(config_file) as file:
+        config.readfp(file)
+        bot=SaberBot(description=config["saberbot"]["desc"])
+        bot.run(config["saberbot"]["oauth"])
+    #except IOError:
+        #print("can't read from config file, did you specify path properly?")
+        #sys.exit(1)
+    #except NameError as e:
+        #print
+    #except KeyboardInterrupt:
+        #sys.exit(0)
 
 class SaberBot(commands.Bot):
     """the main class that contains the bot"""
@@ -58,8 +67,7 @@ class SaberBot(commands.Bot):
         await self.process_commands(message)
 
 if __name__ == "__main__":
-    try:
-        config_file = sys.argv[1]
-        main(config_file)
-    except NameError:
-        print("usage: saberbot.py <path_to_config_file>")
+    if len(sys.argv) == 1:
+        print("please specify input config file")
+    else:
+        main(sys.argv[1])
