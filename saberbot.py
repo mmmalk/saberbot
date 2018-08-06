@@ -2,25 +2,29 @@
 from discord.ext import commands
 import discord
 import datetime, asyncio
-import sys, configparser
+import sys, configparser, os
 
 def main(config_file):
     """calls method to load the .ini-style config, then spawns new instance of bot and starts it"""
-    config = configparser.RawConfigParser()
-    with open(config_file, 'r') as file:
-        print(f"using configfile {config_file}")
-        config.readfp(file)
-        bot=SaberBot(description=config["saberbot"]["desc"])
-        bot.run(config["saberbot"]["oauth"])
+    c=config_file
+    print(f"using configuration: {c}")
+    with open('tmp/config_location', "w+") as location:
+        location.write(f"{os.path.abspath(c)}")    
+    bot=SaberBot(c)
+    bot.run(bot.config["saberbot"]["oauth"])
 
 class SaberBot(commands.Bot):
     """the main class that contains the bot"""
-    def __init__(self, **kwargs):
+    def __init__(self, conf):
         super().__init__(command_prefix=self.get_prefix_)
         self.start_time=None
         self.__version__ = "0.1.0"
         self.loop.create_task(self.track_start()) #unused yet, will be used for timing stuff
         self.loop.create_task(self.load_extensions())
+        self.config = configparser.RawConfigParser()
+        with open(conf, 'r') as file:
+            self.config.readfp(file)
+        self.description = self.config["saberbot"]["desc"]
 
     def get_version(self):
         return self.__version__
@@ -41,7 +45,8 @@ class SaberBot(commands.Bot):
         remember the dotpaths! (cogs.foo)"""
         await self.wait_until_ready()
         await asyncio.sleep(1)
-        self.load_extension("cogs.hello")
+        for cog in self.config['saberbot']['cogs'].split(','):
+            self.load_extension(f"cogs.{cog}")
    
     async def on_ready(self):
         """print some debug data when connected"""
@@ -54,13 +59,13 @@ class SaberBot(commands.Bot):
     
     async def on_message(self, message):
         """event for messages on servers bot joins
-        calls process_commands handler to parse them"""
+       gcalls process_commands handler to parse them"""
         if message.author.bot: #we really don't want possible other bots to trigger commands
             return
         await self.process_commands(message)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print("please specify input config file")
+        print("please specify config file")
     else:
-        main(f'{sys.argv[1]}')
+        main(sys.argv[1])
