@@ -6,24 +6,17 @@ import sys, configparser
 
 def main(config_file):
     """calls method to load the .ini-style config, then spawns new instance of bot and starts it"""
-    config = configparser.ConfigParser()
-    #try:
-    with open(config_file) as file:
+    config = configparser.RawConfigParser()
+    with open(config_file, 'r') as file:
+        print(f"using configfile {config_file}")
         config.readfp(file)
         bot=SaberBot(description=config["saberbot"]["desc"])
         bot.run(config["saberbot"]["oauth"])
-    #except IOError:
-        #print("can't read from config file, did you specify path properly?")
-        #sys.exit(1)
-    #except NameError as e:
-        #print
-    #except KeyboardInterrupt:
-        #sys.exit(0)
 
 class SaberBot(commands.Bot):
     """the main class that contains the bot"""
     def __init__(self, **kwargs):
-        super().__init__(command_prefix=self.get_prefix_, description=desc)
+        super().__init__(command_prefix=self.get_prefix_)
         self.start_time=None
         self.__version__ = "0.1.0"
         self.loop.create_task(self.track_start()) #unused yet, will be used for timing stuff
@@ -70,4 +63,4 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("please specify input config file")
     else:
-        main(sys.argv[1])
+        main(f'{sys.argv[1]}')

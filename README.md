@@ -11,6 +11,7 @@ Also make sure you have installed discord.py, for example using `pip3`
 
 ### Dependencies ###
 * [discord.py](https://github.com/Rapptz/discord)
+* Python 3.6 or greater
 
 ### usage ###
 
