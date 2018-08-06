@@ -5,7 +5,11 @@ import datetime, asyncio
 import sys, configparser, os
 
 def main(config_file):
-    """calls method to load the .ini-style config, then spawns new instance of bot and starts it"""
+    """calls method to load the .ini-style config, then spawns new instance of bot and starts it
+    params: 
+        config_file - name of configurationf file
+    return: 
+        None"""
     c=config_file
     print(f"using configuration: {c}")
     with open('tmp/config_location', "w+") as location:
@@ -27,29 +31,45 @@ class SaberBot(commands.Bot):
         self.description = self.config["saberbot"]["desc"]
 
     def get_version(self):
+        """return: version"""
         return self.__version__
     
     async def get_prefix_(self, bot, message):
         """defines the prefixes used for commands
-        prefix = list[string] or when mentioned"""
+        prefix = list[string] or when mentioned
+        params: 
+            bot - the bot itself
+            message
+        """
         prefix = ["!", "?", "."]
         return commands.when_mentioned_or(*prefix)(bot, message)
 
     async def track_start(self):
-        """logs the starting moment as datetime object as an start_time attribute"""
+        """logs the starting moment as datetime object as an start_time attribute
+        returns: none"""
         await self.wait_until_ready()
         self.start_time=datetime.datetime.utcnow()
 
     async def load_extensions(self):
         """method that handles loading the extensions from cogs-directory
-        remember the dotpaths! (cogs.foo)"""
+        remember the dotpaths! (cogs.foo)
+        params:
+            None
+        returns: 
+            None
+        """
         await self.wait_until_ready()
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog}")
    
     async def on_ready(self):
-        """print some debug data when connected"""
+        """print some debug data when connected
+        params:
+            None
+        returns:
+            None
+        """
         print("SaberBot version:")
         print(self.__version__)
         print("Logged in as:")
@@ -59,7 +79,11 @@ class SaberBot(commands.Bot):
     
     async def on_message(self, message):
         """event for messages on servers bot joins
-       gcalls process_commands handler to parse them"""
+        calls process_commands handler to parse them
+        params:
+            message
+        returns:
+            None"""
         if message.author.bot: #we really don't want possible other bots to trigger commands
             return
         await self.process_commands(message)

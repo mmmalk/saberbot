@@ -3,7 +3,50 @@ from discord.ext import commands
 import json, configparser, pycurl, io, os
 
 class Weather:
-    """Weather class handles weather using openweather api"""
+    """Weather class handles weather using openweather api
+    params:
+        
+    attributes:
+        p: filepath where saberbot lives
+        c: configparser.RawConfigParser
+        api_key: api key for openweather
+        config_location: configuration location for saberbot
+        locations: json file containing the openweathermap location data
+    
+    methods:
+        get_config_location:
+            params: none
+            returns: self.config_location
+        
+        get_config_attribute:
+            params: attribute
+            returns: self.c["weather"][attribute]
+            
+        get_location_id:
+            params: location
+            returns: location id
+            
+        get_data:
+            params: id
+            return: json.loads(data)
+        
+        get_info:
+            params: data
+            return: info
+        
+        kelvin_to_celcius:
+            params: kelvin
+            returns: celcius
+        
+        celcius_to_fahrenheit:
+            params: celcius
+            returns: fahrenheit
+        
+        @commands.command()
+        async weather:
+            params: location
+            returns: None"""
+
     def __init__(self, bot):
         p = os.path.abspath(__file__)
         p = p.split("/") # no easy relative path? just make it a list
@@ -20,9 +63,13 @@ class Weather:
         self.bot = bot
     
     def get_config_location(self):
+        """args: none
+        return: self.config_location"""
         return self.config_location
     
     def get_config_attribute(self, attr):
+        """params: attr - attribute from config file
+        returns: c['weather'][attr] - attribute from config file"""
         return self.c["weather"][attr]
     
     def get_location_id(self, location):
@@ -32,6 +79,8 @@ class Weather:
         return None
     
     def get_data(self, id):
+        """params: id - location id
+        returns: json.loads(data) - dictionary object containing json response"""
         bytes = io.BytesIO()
         apikey = self.get_config_attribute("api_key")
         curl = pycurl.Curl()
@@ -42,6 +91,8 @@ class Weather:
         return json.loads(data)
    
     def get_info(self, data):
+        """params: data
+        returns: info"""
         info = []
         info.append(data["weather"][0]["description"])
         info.append(data["main"]["temp"])
@@ -57,6 +108,9 @@ class Weather:
 
     @commands.command()
     async def weather(self, location):
+        """says weather data on discord channel
+        params: location
+        returns: None"""
         location_id = self.get_location_id(location)
         weatherdata = self.get_data(location_id)
         relevant = self.get_info(weatherdata)
