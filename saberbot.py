@@ -7,7 +7,7 @@ import sys, configparser, os
 def main(config_file):
     """calls method to load the .ini-style config, then spawns new instance of bot and starts it
     params: 
-        config_file - name of configurationf file
+        config_file - name of configuration file
     return: 
         None"""
     c=config_file
@@ -28,7 +28,8 @@ class SaberBot(commands.Bot):
         self.config = configparser.RawConfigParser()
         with open(conf, 'r') as file:
             self.config.readfp(file)
-        self.description = self.config["saberbot"]["desc"]
+        self.load_extensions()
+        
 
     def get_version(self):
         """return: version"""
@@ -62,6 +63,7 @@ class SaberBot(commands.Bot):
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog}")
+            print(f"loaded cog: {cog}")
    
     async def on_ready(self):
         """print some debug data when connected

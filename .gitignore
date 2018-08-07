@@ -1,5 +1,6 @@
 #gitignore file, ignore all __pycache__ folders
 **/__pycache__
+**/tmp
 #let's also ignore swap files
 *.swp
 #and .dia files I use for planning
