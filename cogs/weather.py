@@ -1,65 +1,25 @@
 import discord
 from discord.ext import commands
-import json, configparser, pycurl, io, os
+import cogs.getconfig as getconfig
+import json, pycurl, io 
 
 class Weather:
     """Weather class handles weather using openweather api
     params:
         
     attributes:
-        p: filepath where saberbot lives
-        c: configparser.RawConfigParser
-        api_key: api key for openweather
+        apikey: api key for openweather
         config_location: configuration location for saberbot
         locations: json file containing the openweathermap location data
-    
-    methods:
-        get_config_location:
-            params: none
-            returns: self.config_location
-        
-        get_config_attribute:
-            params: attribute
-            returns: self.c["weather"][attribute]
-            
-        get_location_id:
-            params: location
-            returns: location id
-            
-        get_data:
-            params: id
-            return: json.loads(data)
-        
-        get_info:
-            params: data
-            return: info
-        
-        kelvin_to_celcius:
-            params: kelvin
-            returns: celcius
-        
-        celcius_to_fahrenheit:
-            params: celcius
-            returns: fahrenheit
-        
-        @commands.command()
-        async weather:
-            params: location
-            returns: None"""
+    """
 
     def __init__(self, bot):
-        p = os.path.abspath(__file__)
-        p = p.split("/") # no easy relative path? just make it a list
-        p = p[0:len(p)-2] # slice it 
-        p = "/".join(p) # make it a string again
-        with open(f"{p}/tmp/config_location", "r") as location:
-            self.config_location=location.read()
-            self.c = configparser.RawConfigParser()
-        with open(self.config_location, "r") as config:
-            self.c.readfp(config)
-        with open(f"{p}/cogs/city.list.json", "r") as locations:
+        config_getter = getconfig.Config()
+        config = config_getter.get_config()
+        with open(f"{config_getter.get_botpath()}/data/city.list.json", "r") as locations:
             self.locations_json = json.load(locations)
-        self.api_key = self.c["weather"]["api_key"]
+        self.apikey = config["weather"]["apikey"]
+        print(self.apikey)
         self.bot = bot
     
     def get_config_location(self):
@@ -73,21 +33,20 @@ class Weather:
         return self.c["weather"][attr]
     
     def get_location_id(self, location):
-        for c in self.locations_json:
-            if c['name'] == location:
-                return c['id']
+        for item in self.locations_json:
+            if item["name"] == location:
+                return item["id"]
         return None
     
     def get_data(self, id):
         """params: id - location id
         returns: json.loads(data) - dictionary object containing json response"""
         bytes = io.BytesIO()
-        apikey = self.get_config_attribute("api_key")
         curl = pycurl.Curl()
-        curl.setopt(curl.URL, f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={apikey}")
-        curl.setopt(pycurl.WRITEFUNCTION, bytes.write)
+        curl.setopt(curl.URL, f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}")
+        curl.setopt(curl.WRITEFUNCTION, bytes.write)
         curl.perform()
-        data = bytes.getvalue().decode('UTF-8')
+        data = bytes.getvalue().decode("UTF-8")
         return json.loads(data)
    
     def get_info(self, data):
@@ -111,12 +70,16 @@ class Weather:
         """says weather data on discord channel
         params: location
         returns: None"""
+        location = location.lower().capitalize() #rudimentary user input sanitization
         location_id = self.get_location_id(location)
-        weatherdata = self.get_data(location_id)
-        relevant = self.get_info(weatherdata)
-        c = self.kelvin_to_celcius(relevant[1])
-        f = self.celcius_to_fahrenheit(c)        
-        await self.bot.say(f"weather for {location}: {relevant[0]} - {c} °C - {f} °F")
+        if location_id != None:
+            weatherdata = self.get_data(location_id)
+            relevant = self.get_info(weatherdata)
+            c = self.kelvin_to_celcius(relevant[1])
+            f = self.celcius_to_fahrenheit(c)        
+            await self.bot.say(f"weather for {location}: {relevant[0]} - {c} °C - {f} °F")
+        else:
+            await self.bot.say(f"Sorry, I don't know where {location} is")
 
 def setup(bot):
     bot.add_cog(Weather(bot))
