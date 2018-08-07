@@ -70,6 +70,7 @@ class Weather:
         """says weather data on discord channel
         params: location
         returns: None"""
+        location = location.lower().capitalize() #rudimentary user input sanitization
         location_id = self.get_location_id(location)
         if location_id != None:
             weatherdata = self.get_data(location_id)
