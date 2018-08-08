@@ -25,13 +25,15 @@ class SaberBot(commands.Bot):
         self.__version__ = "0.1.0"
         self.loop.create_task(self.track_start()) #unused yet, will be used for timing stuff
         self.loop.create_task(self.load_extensions())
-        self.config = configparser.RawConfigParser()
-        with open(conf, 'r') as file:
-            self.config.readfp(file)
-        self.load_extensions()
-        
+        self.config = configparser.ConfigParser()
+        with open(conf) as file:
+            self.config.read_file(file)
+        self.owner_id = self.config['owner']['id']
+    
+    async def is_owner(self, ctx):
+        return ctx.message.author.id == self.owner_id
 
-    def get_version(self):
+    async def get_version(self):
         """return: version"""
         return self.__version__
     
@@ -78,17 +80,22 @@ class SaberBot(commands.Bot):
         print(self.user.name)
         print("discord.py version:")
         print(discord.__version__)
+        print("getting application info")
+        if not hasattr(self, "appinfo"):
+            self.appinfo = await self.application_info()
+        print("loading modules")
     
-    async def on_message(self, message):
+    async def on_message(self, ctx):
         """event for messages on servers bot joins
         calls process_commands handler to parse them
         params:
             message
         returns:
             None"""
-        if message.author.bot: #we really don't want possible other bots to trigger commands
+        self.last_ctx = ctx
+        if ctx.author.bot: #we really don't want possible other bots to trigger commands
             return
-        await self.process_commands(message)
+        await self.process_commands(ctx)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord, json, urllib.request, re
-import cogs.getconfig
+import cogs.getconfig as getconfig
 
 
 class GameSearch:
