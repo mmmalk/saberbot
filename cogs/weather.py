@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import cogs.getconfig as getconfig
+import cogs.queryhandler as queryhandler
 import json, pycurl, io 
 
 class Weather:
@@ -19,7 +20,6 @@ class Weather:
         with open(f"{config_getter.get_botpath()}/data/city.list.json", "r") as locations:
             self.locations_json = json.load(locations)
         self.apikey = config["weather"]["apikey"]
-        print(self.apikey)
         self.bot = bot
     
     def get_config_location(self):
@@ -41,12 +41,9 @@ class Weather:
     def get_data(self, id):
         """params: id - location id
         returns: json.loads(data) - dictionary object containing json response"""
-        bytes = io.BytesIO()
-        curl = pycurl.Curl()
-        curl.setopt(curl.URL, f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}")
-        curl.setopt(curl.WRITEFUNCTION, bytes.write)
-        curl.perform()
-        data = bytes.getvalue().decode("UTF-8")
+        url_string=f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}"        
+        handler = queryhandler.QueryHandler(url_string)
+        data = handler.curl_get()
         return json.loads(data)
    
     def get_info(self, data):
