@@ -1,8 +1,7 @@
 import discord
 from discord.ext import commands
 import cogs.getconfig as getconfig
-import cogs.queryhandler as queryhandler
-import json, pycurl, io 
+import json, urllib.request, io 
 
 class Weather:
     """Weather class handles weather using openweather api
@@ -40,11 +39,11 @@ class Weather:
     
     def get_data(self, id):
         """params: id - location id
-        returns: json.loads(data) - dictionary object containing json response"""
+        returns: data - dictionary object containing json response"""
         url_string=f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}"        
-        handler = queryhandler.QueryHandler(url_string)
-        data = handler.curl_get()
-        return json.loads(data)
+        response = urllib.request.urlopen(url_string)
+        data = json.loads(response.read())        
+        return data
    
     def get_info(self, data):
         """params: data

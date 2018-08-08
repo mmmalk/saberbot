@@ -62,8 +62,8 @@ class SaberBot(commands.Bot):
         await self.wait_until_ready()
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
-            self.load_extension(f"cogs.{cog}")
-            print(f"loaded cog: {cog}")
+            self.load_extension(f"cogs.{cog.lstrip()}")
+            print(f"loaded cog: {cog.lstrip()}")
    
     async def on_ready(self):
         """print some debug data when connected
