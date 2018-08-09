@@ -30,9 +30,6 @@ class SaberBot(commands.Bot):
             self.config.read_file(file)
         self.owner_id = self.config['owner']['id']
     
-    async def is_owner(self, ctx):
-        return ctx.message.author.id == self.owner_id
-
     async def get_version(self):
         """return: version"""
         return self.__version__
@@ -66,7 +63,7 @@ class SaberBot(commands.Bot):
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog.lstrip()}")
             print(f"loaded cog: {cog.lstrip()}")
-   
+
     async def on_ready(self):
         """print some debug data when connected
         params:
@@ -83,6 +80,8 @@ class SaberBot(commands.Bot):
         print("getting application info")
         if not hasattr(self, "appinfo"):
             self.appinfo = await self.application_info()
+        print("getting owner")
+        self.owner = await self.get_user_info(self.owner_id)
         print("loading modules")
     
     async def on_message(self, ctx):

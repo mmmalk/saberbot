@@ -10,10 +10,9 @@ class Base:
     async def echo(self, *args):
         await self.bot.say("  ".join(args))
 
-    @commands.group(pass_context=True)
+    @commands.group(pass_context=True, hidden=True)
     async def admin(self, ctx):
-        isowner = await self.bot.is_owner(ctx)
-        if not isowner:
+        if not self.bot.owner_id == ctx.message.author.id:
            await self.bot.say("You're not allowed to do that")
            raise boterror.InsufficientRights(f"{ctx.message.author} invoked owner-only command: {ctx.message.channel}: {ctx.message.content}")
         if ctx.invoked_subcommand is None:
