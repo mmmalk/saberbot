@@ -14,12 +14,8 @@ class Weather:
     """
 
     def __init__(self, bot):
-        config_getter = getconfig.Config()
-        config = config_getter.get_config()
-        with open(f"{config_getter.get_botpath()}/data/city.list.json", "r") as locations:
-            self.locations_json = json.load(locations)
-        self.apikey = config["weather"]["apikey"]
         self.bot = bot
+        self.apikey = self.bot.config["weather"]["apikey"]
     
     def get_config_location(self):
         """args: none

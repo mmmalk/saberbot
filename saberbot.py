@@ -30,6 +30,10 @@ class SaberBot(commands.Bot):
             self.config.read_file(file)
         self.owner_id = self.config['owner']['id']
     
+    async def is_owner(self, usr):
+        return self.owner == usr
+
+
     async def get_version(self):
         """return: version"""
         return self.__version__
