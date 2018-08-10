@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import cogs.getconfig as getconfig
-import json, pycurl, io 
+import json, urllib.request, io 
 
 class Weather:
     """Weather class handles weather using openweather api
@@ -14,13 +14,8 @@ class Weather:
     """
 
     def __init__(self, bot):
-        config_getter = getconfig.Config()
-        config = config_getter.get_config()
-        with open(f"{config_getter.get_botpath()}/data/city.list.json", "r") as locations:
-            self.locations_json = json.load(locations)
-        self.apikey = config["weather"]["apikey"]
-        print(self.apikey)
         self.bot = bot
+        self.apikey = self.bot.config["weather"]["apikey"]
     
     def get_config_location(self):
         """args: none
@@ -40,14 +35,11 @@ class Weather:
     
     def get_data(self, id):
         """params: id - location id
-        returns: json.loads(data) - dictionary object containing json response"""
-        bytes = io.BytesIO()
-        curl = pycurl.Curl()
-        curl.setopt(curl.URL, f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}")
-        curl.setopt(curl.WRITEFUNCTION, bytes.write)
-        curl.perform()
-        data = bytes.getvalue().decode("UTF-8")
-        return json.loads(data)
+        returns: data - dictionary object containing json response"""
+        url_string=f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}"        
+        response = urllib.request.urlopen(url_string)
+        data = json.loads(response.read())        
+        return data
    
     def get_info(self, data):
         """params: data

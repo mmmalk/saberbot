@@ -25,13 +25,16 @@ class SaberBot(commands.Bot):
         self.__version__ = "0.1.0"
         self.loop.create_task(self.track_start()) #unused yet, will be used for timing stuff
         self.loop.create_task(self.load_extensions())
-        self.config = configparser.RawConfigParser()
-        with open(conf, 'r') as file:
-            self.config.readfp(file)
-        self.load_extensions()
-        
+        self.config = configparser.ConfigParser()
+        with open(conf) as file:
+            self.config.read_file(file)
+        self.owner_id = self.config['owner']['id']
+    
+    async def is_owner(self, usr):
+        return self.owner == usr
 
-    def get_version(self):
+
+    async def get_version(self):
         """return: version"""
         return self.__version__
     
@@ -62,9 +65,9 @@ class SaberBot(commands.Bot):
         await self.wait_until_ready()
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
-            self.load_extension(f"cogs.{cog}")
-            print(f"loaded cog: {cog}")
-   
+            self.load_extension(f"cogs.{cog.lstrip()}")
+            print(f"loaded cog: {cog.lstrip()}")
+
     async def on_ready(self):
         """print some debug data when connected
         params:
@@ -78,17 +81,24 @@ class SaberBot(commands.Bot):
         print(self.user.name)
         print("discord.py version:")
         print(discord.__version__)
+        print("getting application info")
+        if not hasattr(self, "appinfo"):
+            self.appinfo = await self.application_info()
+        print("getting owner")
+        self.owner = await self.get_user_info(self.owner_id)
+        print("loading modules")
     
-    async def on_message(self, message):
+    async def on_message(self, ctx):
         """event for messages on servers bot joins
         calls process_commands handler to parse them
         params:
             message
         returns:
             None"""
-        if message.author.bot: #we really don't want possible other bots to trigger commands
+        self.last_ctx = ctx
+        if ctx.author.bot: #we really don't want possible other bots to trigger commands
             return
-        await self.process_commands(message)
+        await self.process_commands(ctx)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
