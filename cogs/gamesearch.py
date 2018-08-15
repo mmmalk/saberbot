@@ -10,18 +10,29 @@ def setup(bot):
     bot.add_cog(GameSearch(bot))
 
 class GameSearch:
-
+    """Module that's used to search games from gog.com and steam"""
     def __init__(self, bot, *arg): #__init__(self, bot) for deployment
         self.last_result = {}
         self.bot = bot
         self.safe = re.compile("[^a-zA-Z0-9\s+]")
 
-    def get_json(self, addr): #used for fetching json from server, for GameSearch.Steam() use get_from_file(filename) 
+    def get_json(self, addr):
+        """fetches the .json
+        params:
+            addr = address of the json
+        returns:
+            data = dictionary formed from json data"""
         response = request.urlopen(addr, None, 5) 
         data = json.loads(response.read())
         return data
     
     def formquery(self, *args):
+        """ parses the arguments to list of terms to query for
+        params:
+                *args - list of search arguments
+        returns:
+                query = list of words to make query from
+                results = how many results will be returned(defaults to 1)"""
         query = list(args)
         results = 1
         for item in query:
@@ -31,6 +42,11 @@ class GameSearch:
         return query, results
     
     def formregex(self, querylist):
+        """forms regex from list of search terms
+        params:
+            querylist - list of strings containing search terms
+        returns:
+            re_string - the regex pattern"""
         all = "[a-z\s]*"
         re_string = all
         for word in querylist:
@@ -40,7 +56,8 @@ class GameSearch:
 
     @commands.command()
     async def gog(self, *args):
-        query, results = self.formquery(*args)
+        """commmand to fetch a gog game
+        usage: gog <query> (results=1)"""
         if not query:
             return
         gogsearch = Gog(self.bot)
@@ -52,10 +69,10 @@ class GameSearch:
             await self.bot.say(gogsearch.baseurl + game["url"])
 
     @commands.command()
+    """command to fetch a steam game
+    usage: steam <query> (results=1)"""
     async def steam(self, *args):
         s = Steam(self.bot)
-        print("=============SEARCH BEGINS==============")
-        print(f"commands.command().steam: {args}")
         query, results = self.formquery(*args)
         print(query)
         if not query:
@@ -73,6 +90,8 @@ class GameSearch:
 
     @commands.command()
     async def updatesteam(self, *args):
+        """command to update steam game database
+        usage: updatesteam"""
         s = Steam(self.bot)
         try:
             s.refreshapps()
@@ -90,6 +109,12 @@ class Gog(GameSearch):
         self.safe = re.compile("[^a-zA-Z0-9\s+]")
     
     def parse_reply(self, data, results):
+        """parses the gog response into list of games
+        params:
+            data = the json response from gogcom server
+            results = int of number of games to search for
+        returns:
+            games[] = list of dicts, games[{'id': 'int', 'url': 'str'}]"""
         games = []
         if results > len(data["products"]):
             results = len(data["products"])
@@ -97,10 +122,15 @@ class Gog(GameSearch):
             results = 1
         for i in range(results):
             currentgame = data["products"][i]
-            games.append({'id': currentgame['title'], 'url' : currentgame['url']})
+            games.append({"id" : currentgame["id"], "url" : currentgame["url"]})
         return games
     
     def search(self, query):
+        """forms the url for json query
+        params:
+            query = list of strings containing search terms
+        returns:
+            searchurl = the string containing the url for json query"""
         query = [word.strip() for word in query]
         keyword = "  ".join(query) 
         keyword = self.safe.sub("", keyword) #parse all but alphanumerics and space
@@ -109,6 +139,7 @@ class Gog(GameSearch):
         return searchurl
 
 class Steam(GameSearch):
+    """Submodule for fetching Steam game from store"""
             
     def __init__(self, bot, *args):
          super().__init__(self, args)
@@ -117,6 +148,11 @@ class Steam(GameSearch):
          self.baseurl = "https://store.steampowered.com/app/"
     
     def search(self, querylist):
+        """performs the steam store search, forms query and queries the local copy of json containing the ids of the games
+        params:
+            querylist = list of strings containing search terms
+        returns:
+            results = sorted(by the length of the name) dictionary containing the results"""
         for word in querylist:
             querylist[querylist.index(word)] = self.safe.sub("", word).lower() #remove anything but alphanumerics, make it lowercase
         regex_str = self.formregex(querylist)
@@ -130,15 +166,37 @@ class Steam(GameSearch):
         return results
 
     def parseapplist(self, query_regex, data):
+        """goes through the given dict, and matches the names of the games against given regex of the query
+        params:
+            query_regex = the regex to match game names against
+            data = the dict containing the names and other stuff about games
+        returns:
+            results = dict containing appid and name results{'id': 'int', 'name' : 'str'}"""
         applications = data['applist']['apps']
         results = []
         for app in applications:
             appname = self.safe.sub("", app['name']).lower() #appname =string without anything but alphanumerics
             if re.match(query_regex, appname):
-                results.append({'id' : app['appid'], 'name' : appname})
+                if self.checkgame(app["appid"]):
+                    results.append({"id" : app["appid"], "name" : appname})
         return results
+
+    def checkgame(self, appid):
+        """method checks if the store page actually exists
+        params:
+            appid = the id of the store item to check
+        returns:
+            status = boolean whether store page exists(if there's redirect or not)"""
+        appurl = self.baseurl + str(appid)
+        result = request.get(url, allow_redirects=False)
+        if 300 < result < 400:
+            return False
+        return True
     
     def refreshapps(self):
+        """method used for reading the GetAppList resource from json, then pickling it for local storage
+        params, returns:
+            none"""
         jsonurl = self.apiurl + "/ISteamApps/GetAppList/v2"
         jsonpath = self.bot.config["gamesearch"]["jsonpath"]
         jsonpath = path.abspath(jsonpath)

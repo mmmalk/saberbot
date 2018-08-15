@@ -19,13 +19,14 @@ class Hello:
         if not re:
             await self.bot.say(f"you're not owner, {ctx.message.author.mention}")
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     async def ami(self, ctx):
         print(ctx.message.author)
         re = self.bot.is_owner(ctx.message.author.id)
         await self.bot.say(re)
 
     @commands.command(pass_context=True)
+    """tells user who's cool"""
     async def cool(self, ctx):
         await self.bot.send_message(ctx.message.channel, f"who's cool? {ctx.message.author.mention} is!")
 

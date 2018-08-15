@@ -68,8 +68,8 @@ class SaberBot(commands.Bot):
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog.lstrip()}")
-            print(f"loaded cog: {cog.lstrip()}")
-
+            logger.info(f"loaded cog {cog.lstrip()}")
+epAugu
     async def on_ready(self):
         """log some debug data when connected
         params:
@@ -96,12 +96,15 @@ class SaberBot(commands.Bot):
         self.last_ctx = ctx
         if msg.author.bot: #we really don't want possible other bots to trigger commands
             return
-        if not msg:
-            self.chatter(msg)
+        logging.info(f"{msg.timestamp}\t{msg.author}:{msg.content}") 
         await self.process_commands(msg)
     
     async def on_error(self, *args, **kwargs):
-        message=args[0]
+        """logs the error message on error
+        params:
+            msg - the message that caused the error"""
+        msg=args[0]
+        logging.warning(f"{msg.timestamp}\t{msg.author}@{msg.channel}: {msg.content}")
         logging.warning(traceback.format_exc()) #traceback.format_exc returns str, instead of writing to a file
         await self.send_message(message.channel, "I'm sorry, I didn't quite understand, please try again. See !help for command info.")
 

@@ -12,3 +12,5 @@ saberconfig.ini
 responses
 config.ini.bak
 saberbot_ideas
+**/log
+*.log
