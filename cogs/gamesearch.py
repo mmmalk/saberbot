@@ -1,6 +1,5 @@
 from discord.ext import commands
 from urllib import parse
-from urllib import request
 from os import path
 from http import cookiejar
 import discord, json, pickle, re, requests, time
@@ -21,8 +20,9 @@ class GameSearch:
             addr = address of the json
         returns:
             data = dictionary formed from json data"""
-        response = request.urlopen(addr, None, 5) 
-        data = json.loads(response.read())
+        response = requests.get(addr) 
+        data = response.json()
+        response.close()
         return data
     
     def formquery(self, *args):
@@ -187,7 +187,9 @@ class Steam(GameSearch):
             status = boolean whether store page exists(if there's redirect or not)"""
         appurl = self.baseurl + str(appid)
         response = requests.get(appurl, allow_redirects=False)
-        if 300 < response.status_code < 400:
+        status = response.status_code
+        response.close()
+        if 300 < status < 400:
             return False
         return True
     
