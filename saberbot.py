@@ -2,7 +2,7 @@
 from discord.ext import commands
 import discord
 import datetime, asyncio, logging
-import sys, configparser, os
+import sys, configparser, os, queue
 
 def main(config_file):
     """calls method to load the .ini-style config, then spawns new instance of bot and starts it
@@ -12,10 +12,6 @@ def main(config_file):
         None"""
     c=config_file
     print(f"using configuration: {c}")
-    logger = logging.getLogger("discord")
-    logger.setLevel(logging.WARNING)
-    loghandler = logging.FileHandler(filename="log/saberbot.log", mode="w")
-    loghandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
     bot=SaberBot(c)
     bot.run(bot.config["saberbot"]["oauth"])
 
@@ -31,7 +27,10 @@ class SaberBot(commands.Bot):
         with open(conf) as file:
             self.config.read_file(file)
         self.owner_id = self.config['owner']['id']
-    
+        self.logger = logging.getLogger("discord")
+        self.logger.setLevel(logging.INFO)
+        self.loghandler = logging.FileHandler(filename="log/saberbot.log", mode="w")
+        self.loghandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
     async def is_owner(self, usr):
         return self.owner == usr
 
@@ -68,8 +67,8 @@ class SaberBot(commands.Bot):
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog.lstrip()}")
-            logger.info(f"loaded cog {cog.lstrip()}")
-epAugu
+            self.logger.info(f"loaded cog {cog.lstrip()}")
+    
     async def on_ready(self):
         """log some debug data when connected
         params:
@@ -82,9 +81,9 @@ epAugu
         logging.info(f"discord.py version: {discord.__version__}")
         if not hasattr(self, "appinfo"):
             self.appinfo = await self.application_info()
-        logging.info(self.appinfo)
+        self.logger.info(self.appinfo)
         self.owner = await self.get_user_info(self.owner_id)
-        logging.info(self.owner)
+        self.logger.info(self.owner)
 
     async def on_message(self, msg):
         """event for messages on servers bot joins
@@ -93,10 +92,9 @@ epAugu
             message
         returns:
             None"""
-        self.last_ctx = ctx
         if msg.author.bot: #we really don't want possible other bots to trigger commands
             return
-        logging.info(f"{msg.timestamp}\t{msg.author}:{msg.content}") 
+        self.logger.info(f"{msg.timestamp}:{msg.content}") 
         await self.process_commands(msg)
     
     async def on_error(self, *args, **kwargs):
@@ -104,9 +102,9 @@ epAugu
         params:
             msg - the message that caused the error"""
         msg=args[0]
-        logging.warning(f"{msg.timestamp}\t{msg.author}@{msg.channel}: {msg.content}")
-        logging.warning(traceback.format_exc()) #traceback.format_exc returns str, instead of writing to a file
-        await self.send_message(message.channel, "I'm sorry, I didn't quite understand, please try again. See !help for command info.")
+        self.logger.warning(msg)
+        self.logger.warning(traceback.format_exc()) #traceback.format_exc returns str, instead of writing to a file
+        self.reply("I'm sorry, I didn't quite understand, please try again. See !help for command info.")
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

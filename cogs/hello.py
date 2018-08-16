@@ -26,8 +26,8 @@ class Hello:
         await self.bot.say(re)
 
     @commands.command(pass_context=True)
-    """tells user who's cool"""
     async def cool(self, ctx):
+        """tells user who's cool"""
         await self.bot.send_message(ctx.message.channel, f"who's cool? {ctx.message.author.mention} is!")
 
     async def on_member_join(self, member):

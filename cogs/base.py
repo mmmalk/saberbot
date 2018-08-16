@@ -6,7 +6,7 @@ class Base:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def echo(self, *args):
         await self.bot.say("  ".join(args))
 

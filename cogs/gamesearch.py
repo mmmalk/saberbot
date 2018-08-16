@@ -2,9 +2,8 @@ from discord.ext import commands
 from urllib import parse
 from urllib import request
 from os import path
-import discord, json, pickle, re
-import cogs.getconfig as getconfig
-
+from http import cookiejar
+import discord, json, pickle, re, requests, time
 
 def setup(bot):
     bot.add_cog(GameSearch(bot))
@@ -33,12 +32,14 @@ class GameSearch:
         returns:
                 query = list of words to make query from
                 results = how many results will be returned(defaults to 1)"""
-        query = list(args)
+        query = []
         results = 1
-        for item in query:
-            if item.startswith("links="):
-                results = int(item[6:])
-                del query[query.index(item)]
+        for item in args:
+            if "=" in item:
+                if item.startswith("links"):
+                    results = int(item[6:])
+                continue
+            query.append(item)
         return query, results
     
     def formregex(self, querylist):
@@ -56,8 +57,9 @@ class GameSearch:
 
     @commands.command()
     async def gog(self, *args):
-        """commmand to fetch a gog game
-        usage: gog <query> (results=1)"""
+        """usage: gog <query> (results=1)"""
+        query, results = self.formquery(*args)
+        self.bot.logger.info(query)
         if not query:
             return
         gogsearch = Gog(self.bot)
@@ -65,26 +67,23 @@ class GameSearch:
         query = gogsearch.get_json(url)
         gamelist = gogsearch.parse_reply(query, results)
         for game in gamelist:
-            print(game)
             await self.bot.say(gogsearch.baseurl + game["url"])
 
     @commands.command()
-    """command to fetch a steam game
-    usage: steam <query> (results=1)"""
     async def steam(self, *args):
+        """usage: steam <query> (results=1)"""
         s = Steam(self.bot)
         query, results = self.formquery(*args)
-        print(query)
         if not query:
             return
         try:
             games = s.search(query)
-            print(games)
             if results > len(games):
                 results = len(games)
             for index in range(results):
                 gameurl = s.baseurl + str(games[index]["id"])
                 await self.bot.say(gameurl)
+                time.sleep(3)
         except FileNotFoundError:
             await self.bot.say("can't find jsonpath")
 
@@ -156,7 +155,6 @@ class Steam(GameSearch):
         for word in querylist:
             querylist[querylist.index(word)] = self.safe.sub("", word).lower() #remove anything but alphanumerics, make it lowercase
         regex_str = self.formregex(querylist)
-        print(regex_str)
         query_regex = re.compile(regex_str)
         jsonpath = path.abspath("tmp/steamapps")
         with open(jsonpath, "rb") as jsonfile: #could also use get_json
@@ -188,8 +186,8 @@ class Steam(GameSearch):
         returns:
             status = boolean whether store page exists(if there's redirect or not)"""
         appurl = self.baseurl + str(appid)
-        result = request.get(url, allow_redirects=False)
-        if 300 < result < 400:
+        response = requests.get(appurl, allow_redirects=False)
+        if 300 < response.status_code < 400:
             return False
         return True
     
@@ -200,13 +198,8 @@ class Steam(GameSearch):
         jsonurl = self.apiurl + "/ISteamApps/GetAppList/v2"
         jsonpath = self.bot.config["gamesearch"]["jsonpath"]
         jsonpath = path.abspath(jsonpath)
-        print(jsonpath)
-        print(jsonurl)
-        print(f"getting the json from {jsonurl}")
         jsondata = self.get_json(jsonurl)
         with open(jsonpath, "wb") as jsonfile:
-            print(f"writing {jsonpath}")
             pickle.dump(jsondata, jsonfile)
-        print("done")
         
     
