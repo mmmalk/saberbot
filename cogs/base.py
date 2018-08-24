@@ -24,6 +24,7 @@ class Base:
             try:
                 self.bot.unload_extension(f"cogs.{arg}")
                 self.bot.load_extension(f"cogs.{arg}")
+                self.bot.logger.info(f"{arg} reloaded")
                 await self.bot.say(f"{arg} reloaded")
             except ModuleNotFoundError:
                 await self.bot.say(f"Can't find module {arg}")
@@ -33,7 +34,8 @@ class Base:
         for arg in args:
             try:
                 self.bot.unload_extension(f"cogs.{arg}")
-                await self.bot.say(f"{arg} loaded")
+                self.bot.logger.info(f"{arg} unloaded")
+                await self.bot.say(f"{arg} unloaded")
             except ModuleNotFoundError:
                 await self.bot.say(f"Can't find module {arg}")
 
@@ -43,6 +45,7 @@ class Base:
         for arg in args:
             try:
                 self.bot.load_extension(f"cogs.{arg}")
+                self.bot.logger.info(f"{arg} loaded")
                 await self.bot.say(f"{arg} loaded")
             except ModuleNotFoundError:
                 await self.bot.say(f"Can't find module {arg}")
