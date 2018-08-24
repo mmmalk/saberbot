@@ -66,8 +66,8 @@ class Weather:
 
 
 
-    @commands.command()
-    async def weather(self, *args):
+    @commands.command(pass_context=True)
+    async def weather(self, ctx, *args):
         """says weather data on discord channel
         params: location
         returns: None"""
@@ -88,9 +88,9 @@ class Weather:
             relevant = self.get_info(weatherdata)
             c = self.kelvin_to_celcius(relevant[1])
             f = self.celcius_to_fahrenheit(c)
-            await self.bot.say(f"weather for {location}, {relevant[2]}  {relevant[0]} ({int(c)} °C / {int(f)} °F)")
+            await self.bot.send_message(ctx.message.channel, f"weather for {location}, {relevant[2]}  {relevant[0]} ({int(c)} °C / {int(f)} °F)")
         else:
-            await self.bot.say(f"Sorry, I don't know where {location} is")
+            await self.bot.send_message(ctx.message.channel, f"Sorry, I don't know where {location} is")
 
 def setup(bot):
     bot.add_cog(Weather(bot))

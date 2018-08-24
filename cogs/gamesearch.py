@@ -55,8 +55,8 @@ class GameSearch:
         re_string += all
         return re_string
 
-    @commands.command()
-    async def gog(self, *args):
+    @commands.command(pass_context=True)
+    async def gog(self, ctx, *args):
         """usage: gog <query> (results=1)"""
         query, results = self.formquery(*args)
         self.bot.logger.info(query)
@@ -67,10 +67,10 @@ class GameSearch:
         query = gogsearch.get_json(url)
         gamelist = gogsearch.parse_reply(query, results)
         for game in gamelist:
-            await self.bot.say(gogsearch.baseurl + game["url"])
+            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"])
 
-    @commands.command()
-    async def steam(self, *args):
+    @commands.command(pass_context=True)
+    async def steam(self, ctx, *args):
         """usage: steam <query> (results=1)"""
         s = Steam(self.bot)
         query, results = self.formquery(*args)
@@ -85,16 +85,16 @@ class GameSearch:
                 await self.bot.say(gameurl)
                 time.sleep(3)
         except FileNotFoundError:
-            await self.bot.say("can't find jsonpath")
+            await self.bot.send_message(ctx.message.channel, "can't find jsonpath")
 
-    @commands.command()
-    async def updatesteam(self, *args):
+    @commands.command(pass_context=True)
+    async def updatesteam(self, ctx, *args):
         """command to update steam game database
         usage: updatesteam"""
         s = Steam(self.bot)
         try:
             s.refreshapps()
-            await self.bot.say("jsonfile updated!")
+            await self.bot.send_message(ctx.message.channel, "jsonfile updated!")
         except Exception as e:
             await self.bot.say(e.__cause__)
             await self.bot.say(e.__context__)
@@ -203,5 +203,3 @@ class Steam(GameSearch):
         jsondata = self.get_json(jsonurl)
         with open(jsonpath, "wb") as jsonfile:
             pickle.dump(jsondata, jsonfile)
-        
-    
