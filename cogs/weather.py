@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
-import cogs.getconfig as getconfig
-import json, urllib.request, io 
+import json, requests, io, re
 
 class Weather:
     """Weather class handles weather using openweather api
@@ -15,63 +14,74 @@ class Weather:
 
     def __init__(self, bot):
         self.bot = bot
-        self.apikey = self.bot.config["weather"]["apikey"]
-    
-    def get_config_location(self):
-        """args: none
-        return: self.config_location"""
-        return self.config_location
-    
-    def get_config_attribute(self, attr):
-        """params: attr - attribute from config file
-        returns: c['weather'][attr] - attribute from config file"""
-        return self.c["weather"][attr]
-    
-    def get_location_id(self, location):
+        self.conf = self.bot.config["weather"]
+        self.apikey = self.conf["apikey"]
+        with open(self.conf["citylist"]) as jsonfile:
+            self.locations_json = json.loads(jsonfile.read())
+       
+    def parsequery(self, *args):
+        """parses list of argument to string"""
+        querystring = ""
+        keywords = {}
+        print(args)
+        for arg in args:
+            if "=" in arg:
+                larg = arg.split("=")
+                keywords[larg[0]] = larg[1]
+                continue
+            querystring += f" {str(arg)}"
+        querystring = querystring.lstrip()
+        return querystring, keywords
+
+    def get_location_id(self, location, country):
+        print(location)
         for item in self.locations_json:
             if item["name"] == location:
-                return item["id"]
+                if not country or item["country"]== country.upper():
+                    return str(item["id"])
         return None
     
-    def get_data(self, id):
+    def get_data(self, id, url_string):
         """params: id - location id
         returns: data - dictionary object containing json response"""
-        url_string=f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}"        
-        response = urllib.request.urlopen(url_string)
-        data = json.loads(response.read())        
+        response = requests.get(url_string)
+        data = json.loads(response.text)        
         return data
-   
-    def get_info(self, data):
-        """params: data
-        returns: info"""
-        info = []
-        info.append(data["weather"][0]["description"])
-        info.append(data["main"]["temp"])
-        return info
-
-    def kelvin_to_celcius(self, k):
-        return k - 273.15
-
-    def celcius_to_fahrenheit(self, c):
+    
+    def CtoF(self, c):
         return (9/5)*c+32
 
-
-
-    @commands.command()
-    async def weather(self, location):
+    @commands.command(pass_context=True)
+    async def weather(self, ctx, *args):
         """says weather data on discord channel
         params: location
         returns: None"""
-        location = location.lower().capitalize() #rudimentary user input sanitization
-        location_id = self.get_location_id(location)
-        if location_id != None:
-            weatherdata = self.get_data(location_id)
-            relevant = self.get_info(weatherdata)
-            c = self.kelvin_to_celcius(relevant[1])
-            f = self.celcius_to_fahrenheit(c)        
-            await self.bot.say(f"weather for {location}: {relevant[0]} - {c} °C - {f} °F")
+        relevant = {}
+        location, keywords = self.parsequery(*args) 
+        if keywords:
+            country = keywords["country"]
         else:
-            await self.bot.say(f"Sorry, I don't know where {location} is")
+            country = ""
+        regex = re.compile("([^\w\s{1}]|\d|_|\s+)") #\W_ didn't work in testing for some reason?
+        location = re.sub(regex, "", location) #transform location into string with spaces
+        l = []
+        l.append(country)
+        l.append(location)
+        print(l)
+        location_id = self.get_location_id(location, country)
+        if location_id != None:
+            weather_url=f"https://api.openweathermap.org/data/2.5/weather?id={location_id}&units=metric&APPID={self.apikey}"
+            forecast_url=f"https://api.openweathermap.org/data/2.5/forecast/?id={location_id}&cnt=1&units=metric&APPID={self.apikey}"
+            weatherdata = self.get_data(location_id, weather_url)
+            forecastdata = self.get_data(location_id, forecast_url)
+            country = weatherdata["sys"]["country"]
+            print(weatherdata)
+            relevant["today"] = {"desc" : weatherdata["weather"][0]["description"], "temp" : weatherdata["main"]["temp"]}
+            relevant["tomorrow"] = {"desc" : forecastdata["list"][0]["weather"][0]["description"], "temp" : forecastdata["list"][0]["main"]["temp"]} 
+            await self.bot.send_message(ctx.message.channel, f"weather for {location}, {country}: today  {relevant['today']['desc']} {int(relevant['today']['temp'])} °C / {int(self.CtoF(relevant['today']['temp']))} °F")    
+            await self.bot.send_message(ctx.message.channel, f"tomorrow: {relevant['tomorrow']['desc']}, {int(relevant['tomorrow']['temp'])} °C / {int(self.CtoF(relevant['tomorrow']['temp']))} °F")
+        else:
+            await self.bot.send_message(ctx.message.channel, f"Sorry, I don't know where {location} is")
 
 def setup(bot):
     bot.add_cog(Weather(bot))

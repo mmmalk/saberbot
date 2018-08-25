@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 from discord.ext import commands
 import discord
-import datetime, asyncio
-import sys, configparser, os
+import datetime, asyncio, logging
+import sys, configparser, os, queue
 
 def main(config_file):
     """calls method to load the .ini-style config, then spawns new instance of bot and starts it
@@ -12,8 +12,6 @@ def main(config_file):
         None"""
     c=config_file
     print(f"using configuration: {c}")
-    with open('tmp/config_location', "w+") as location:
-        location.write(f"{os.path.abspath(c)}")    
     bot=SaberBot(c)
     bot.run(bot.config["saberbot"]["oauth"])
 
@@ -29,7 +27,10 @@ class SaberBot(commands.Bot):
         with open(conf) as file:
             self.config.read_file(file)
         self.owner_id = self.config['owner']['id']
-    
+        self.logger = logging.getLogger("discord")
+        self.logger.setLevel(logging.INFO)
+        self.loghandler = logging.FileHandler(filename="log/saberbot.log", mode="w")
+        self.loghandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
     async def is_owner(self, usr):
         return self.owner == usr
 
@@ -66,39 +67,44 @@ class SaberBot(commands.Bot):
         await asyncio.sleep(1)
         for cog in self.config['saberbot']['cogs'].split(','):
             self.load_extension(f"cogs.{cog.lstrip()}")
-            print(f"loaded cog: {cog.lstrip()}")
-
+            self.logger.info(f"loaded cog {cog.lstrip()}")
+    
     async def on_ready(self):
-        """print some debug data when connected
+        """log some debug data when connected
         params:
             None
         returns:
             None
         """
-        print("SaberBot version:")
-        print(self.__version__)
-        print("Logged in as:")
-        print(self.user.name)
-        print("discord.py version:")
-        print(discord.__version__)
-        print("getting application info")
+        logging.info(f"version: {self.__version__}")
+        logging.info(f"username: {self.user.name}")
+        logging.info(f"discord.py version: {discord.__version__}")
         if not hasattr(self, "appinfo"):
             self.appinfo = await self.application_info()
-        print("getting owner")
+        self.logger.info(self.appinfo)
         self.owner = await self.get_user_info(self.owner_id)
-        print("loading modules")
-    
-    async def on_message(self, ctx):
+        self.logger.info(self.owner)
+
+    async def on_message(self, msg):
         """event for messages on servers bot joins
         calls process_commands handler to parse them
         params:
             message
         returns:
             None"""
-        self.last_ctx = ctx
-        if ctx.author.bot: #we really don't want possible other bots to trigger commands
+        if msg.author.bot: #we really don't want possible other bots to trigger commands
             return
-        await self.process_commands(ctx)
+        self.logger.info(f"{msg.timestamp}:{msg.content}") 
+        await self.process_commands(msg)
+    
+    async def on_error(self, *args, **kwargs):
+        """logs the error message on error
+        params:
+            msg - the message that caused the error"""
+        msg=args[0]
+        self.logger.warning(msg)
+        self.logger.warning(traceback.format_exc()) #traceback.format_exc returns str, instead of writing to a file
+        self.reply("I'm sorry, I didn't quite understand, please try again. See !help for command info.")
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
