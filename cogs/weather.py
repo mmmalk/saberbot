@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import json, urllib.request, io, re
+import json, requests, io, re
 
 class Weather:
     """Weather class handles weather using openweather api
@@ -18,7 +18,7 @@ class Weather:
         self.apikey = self.conf["apikey"]
         with open(self.conf["citylist"]) as jsonfile:
             self.locations_json = json.loads(jsonfile.read())
-    
+       
     def parsequery(self, *args):
         """parses list of argument to string"""
         querystring = ""
@@ -38,39 +38,25 @@ class Weather:
         for item in self.locations_json:
             if item["name"] == location:
                 if not country or item["country"]== country.upper():
-                    return item["id"]
+                    return str(item["id"])
         return None
     
-    def get_data(self, id):
+    def get_data(self, id, url_string):
         """params: id - location id
         returns: data - dictionary object containing json response"""
-        url_string=f"http://api.openweathermap.org/data/2.5/weather?id={id}&APPID={self.apikey}"        
-        response = urllib.request.urlopen(url_string)
-        data = json.loads(response.read())        
+        response = requests.get(url_string)
+        data = json.loads(response.text)        
         return data
-   
-    def get_info(self, data):
-        """params: data
-        returns: info"""
-        info = []
-        info.append(data["weather"][0]["description"])
-        info.append(data["main"]["temp"])
-        info.append(data["sys"]["country"])
-        return info
-
-    def kelvin_to_celcius(self, k):
-        return k - 273.15
-
-    def celcius_to_fahrenheit(self, c):
+    
+    def CtoF(self, c):
         return (9/5)*c+32
-
-
 
     @commands.command(pass_context=True)
     async def weather(self, ctx, *args):
         """says weather data on discord channel
         params: location
         returns: None"""
+        relevant = {}
         location, keywords = self.parsequery(*args) 
         if keywords:
             country = keywords["country"]
@@ -84,11 +70,16 @@ class Weather:
         print(l)
         location_id = self.get_location_id(location, country)
         if location_id != None:
-            weatherdata = self.get_data(location_id)
-            relevant = self.get_info(weatherdata)
-            c = self.kelvin_to_celcius(relevant[1])
-            f = self.celcius_to_fahrenheit(c)
-            await self.bot.send_message(ctx.message.channel, f"weather for {location}, {relevant[2]}  {relevant[0]} ({int(c)} °C / {int(f)} °F)")
+            weather_url=f"https://api.openweathermap.org/data/2.5/weather?id={location_id}&units=metric&APPID={self.apikey}"
+            forecast_url=f"https://api.openweathermap.org/data/2.5/forecast/?id={location_id}&cnt=1&units=metric&APPID={self.apikey}"
+            weatherdata = self.get_data(location_id, weather_url)
+            forecastdata = self.get_data(location_id, forecast_url)
+            country = weatherdata["sys"]["country"]
+            print(weatherdata)
+            relevant["today"] = {"desc" : weatherdata["weather"][0]["description"], "temp" : weatherdata["main"]["temp"]}
+            relevant["tomorrow"] = {"desc" : forecastdata["list"][0]["weather"][0]["description"], "temp" : forecastdata["list"][0]["main"]["temp"]} 
+            await self.bot.send_message(ctx.message.channel, f"weather for {location}, {country}: today  {relevant['today']['desc']} {int(relevant['today']['temp'])} °C / {int(self.CtoF(relevant['today']['temp']))} °F")    
+            await self.bot.send_message(ctx.message.channel, f"tomorrow: {relevant['tomorrow']['desc']}, {int(relevant['tomorrow']['temp'])} °C / {int(self.CtoF(relevant['tomorrow']['temp']))} °F")
         else:
             await self.bot.send_message(ctx.message.channel, f"Sorry, I don't know where {location} is")
 
