@@ -56,6 +56,7 @@ class GameSearch:
         return re_string
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def gog(self, ctx, *args):
         """usage: gog <query> (results=1)"""
         query, results = self.formquery(*args)
@@ -70,6 +71,7 @@ class GameSearch:
             await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"])
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def steam(self, ctx, *args):
         """usage: steam <query> (results=1)"""
         s = Steam(self.bot)
@@ -88,6 +90,7 @@ class GameSearch:
             await self.bot.send_message(ctx.message.channel, "can't find jsonpath")
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def updatesteam(self, ctx, *args):
         """command to update steam game database
         usage: updatesteam"""
