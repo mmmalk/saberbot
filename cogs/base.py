@@ -7,12 +7,16 @@ class Base:
         self.bot = bot
     
     @commands.command(pass_context=True)
-    #"""tells how much love is in between user and argument"""
     async def love(self, ctx, *args):
+        """tells how much love is in between user and argument"""
         love = " ".join(args)
         amount = random.randrange(0,100)
-        await self.bot.send_message(ctx.message.channel, f"There's {amount}% of love between {ctx.message.author} and {love}")
-    
+        await self.bot.send_message(ctx.message.channel, f"There's {amount}% of love between {ctx.message.author.mention} and {love}")
+
+    @commands.command(pass_context=True)
+    async def hug(self, ctx):
+        """hugs you. ewww"""
+        await self.bot.send_message(ctx.message.channel, f"_hugs_ {ctx.message.author.mention}")
     
     @commands.command(pass_context=True, hidden=True)
     async def echo(self, ctx, *args):

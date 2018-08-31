@@ -26,7 +26,9 @@ class YoutubeSearch:
 
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def youtube(self, ctx, *args):
+        """searches youtube for video"""
         ys = YoutubeSearch(self.bot)
         video = ys.search(*args)
         await self.bot.send_message(ctx.message.channel, video)

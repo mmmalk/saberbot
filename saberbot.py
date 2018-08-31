@@ -31,6 +31,7 @@ class SaberBot(commands.Bot):
         self.logger.setLevel(logging.INFO)
         self.loghandler = logging.FileHandler(filename="log/saberbot.log", mode="w")
         self.loghandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
+        self.logger.addHandler(self.loghandler)
     async def is_owner(self, usr):
         return self.owner == usr
 
