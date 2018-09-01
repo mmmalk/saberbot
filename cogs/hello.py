@@ -38,7 +38,7 @@ class Hello:
         """in cogs, events don't need pie decorator, we can directly react to them
         checks out what server join happened, check's the default channel and displays greet"""
         welcome_channel = self.bot.get_channel(self.bot.config["saberbot"]["welcome_channel"])
-        welcome_message = f"hello, @{member.name}, check out rules and don't be a git :)"
+        welcome_message = f"hello, {member.mention}, check out rules and don't be a git :)"
         await self.bot.send_message(welcome_channel, welcome_message)
         
 
