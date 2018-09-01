@@ -54,9 +54,8 @@ class Weather:
     @commands.command(pass_context=True)
     @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def weather(self, ctx, *args):
-        """says weather data on discord channel
-        params: location
-        returns: None"""
+        """Search for weather by city and optionally a country 
+        usage: !weather <city>, optionally specify country=<ID>, for example !weather London country=UK"""
         relevant = {}
         location, keywords = self.parsequery(*args) 
         if keywords:

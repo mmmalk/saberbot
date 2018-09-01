@@ -58,7 +58,8 @@ class GameSearch:
     @commands.command(pass_context=True)
     @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def gog(self, ctx, *args):
-        """usage: gog <query> (results=1)"""
+        """Search gogcom games
+        usage: !gog <query> optionally specify links=<number> for amount of links"""
         query, results = self.formquery(*args)
         self.bot.logger.info(query)
         if not query:
@@ -68,12 +69,13 @@ class GameSearch:
         query = gogsearch.get_json(url)
         gamelist = gogsearch.parse_reply(query, results)
         for game in gamelist:
-            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"])
+            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + "?pp=1ffd6b1e6d55c8409e0c34d50f39c3e8a2b553ef")
 
     @commands.command(pass_context=True)
     @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def steam(self, ctx, *args):
-        """usage: steam <query> (results=1)"""
+        """Search steam games
+        usage: !steam <query> optionally specify links=<number> for amount of links"""
         s = Steam(self.bot)
         query, results = self.formquery(*args)
         if not query:
