@@ -69,7 +69,7 @@ class GameSearch:
         query = gogsearch.get_json(url)
         gamelist = gogsearch.parse_reply(query, results)
         for game in gamelist:
-            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + "?pp=1ffd6b1e6d55c8409e0c34d50f39c3e8a2b553ef")
+            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + self.bot.config["gamesearch"]["gogparameters"])
 
     @commands.command(pass_context=True)
     @commands.cooldown(1, 5.0, commands.BucketType.server)
