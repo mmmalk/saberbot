@@ -155,7 +155,6 @@ class Gog(GameSearch):
         with open(self.config["gamesearch"]["gog_idlist"], "rb") as file:
             idlist = pickle.load(file)
         re = requests.get(f"https://api.gog.com/products/{random.choice(idlist)}")
-        print(re.text)
         while re.status_code != 200:
             re = requests.get(f"https://api.gog.com/products/{random.choice(idlist)}")
         gamedata = json.loads(re.text)

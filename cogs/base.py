@@ -10,7 +10,7 @@ class Base:
     async def love(self, ctx, *args):
         """tells how much love is in between user and argument"""
         love = " ".join(args)
-        if str(ctx.message.author) == love:
+        if str(ctx.message.author.name) == love:
             await self.bot.send_message(ctx.message.channel, "Love thyself")
             return
         amount = random.randrange(0,100)
