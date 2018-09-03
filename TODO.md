@@ -2,9 +2,7 @@
 
 ### features to implement(in no particular order) ###
 * error handling
-* search games
-	* search gog.com
-	* search steam
 * random chatting when poked
 * quotes?
-* logging, user statistics?
+* no hardcoded values anymore
+* youtube playlist functionality (users can add videos to youtube playlist)

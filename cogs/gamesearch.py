@@ -2,7 +2,7 @@ from discord.ext import commands
 from urllib import parse
 from os import path
 from http import cookiejar
-import discord, json, pickle, re, requests, time
+import discord, json, pickle, random, re, requests, time
 
 def setup(bot):
     bot.add_cog(GameSearch(bot))
@@ -59,17 +59,19 @@ class GameSearch:
     @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def gog(self, ctx, *args):
         """Search gogcom games
-        usage: !gog <query> optionally specify links=<number> for amount of links"""
+        usage: !gog <query> optionally specify links=<number> for amount of links or simply !gog for random store pag or simply !gog for random store page"""
         query, results = self.formquery(*args)
         self.bot.logger.info(query)
-        if not query:
-            return
         gogsearch = Gog(self.bot)
+        if not query:
+            url = gogsearch.get_random()
+            await self.bot.send_message(ctx.message.channel, url + self.bot.config["gamesearch"]["gog_parameters"])
+            return
         url = gogsearch.search(query)
         query = gogsearch.get_json(url)
         gamelist = gogsearch.parse_reply(query, results)
         for game in gamelist:
-            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + "?pp=1ffd6b1e6d55c8409e0c34d50f39c3e8a2b553ef")
+            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + self.bot.config["gamesearch"]["gog_parameters"])
 
     @commands.command(pass_context=True)
     @commands.cooldown(1, 5.0, commands.BucketType.server)
@@ -106,11 +108,12 @@ class GameSearch:
 
 class Gog(GameSearch):
     
-    def __init__(self, *args):
-        super().__init__(self, args)
+    def __init__(self, bot, *args):
+        super().__init__(self, bot, args)
         self.apiurl = "http://embed.gog.com/games/ajax/filtered?mediaType=game&search="
         self.baseurl = "http://www.gog.com"
         self.safe = re.compile("[^a-zA-Z0-9\s+]")
+        self.config = bot.config
     
     def parse_reply(self, data, results):
         """parses the gog response into list of games
@@ -141,6 +144,23 @@ class Gog(GameSearch):
         keyword = parse.quote(keyword)
         searchurl = self.apiurl+keyword
         return searchurl
+
+    def get_random(self):
+        """Gets random game from gog.com by getting random ID from a list containing store IDs
+        params:
+            none
+        returns:
+            storeurl = string containing url for store page"""
+        idlist = []
+        with open(self.config["gamesearch"]["gog_idlist"], "rb") as file:
+            idlist = pickle.load(file)
+        re = requests.get(f"https://api.gog.com/products/{random.choice(idlist)}")
+        while re.status_code != 200:
+            re = requests.get(f"https://api.gog.com/products/{random.choice(idlist)}")
+        gamedata = json.loads(re.text)
+        return gamedata["links"]["product_card"]
+
+
 
 class Steam(GameSearch):
     """Submodule for fetching Steam game from store"""
