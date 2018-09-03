@@ -5,7 +5,8 @@ from http import cookiejar
 import discord, json, pickle, random, re, requests, time
 
 def setup(bot):
-    bot.add_cog(GameSearch(bot))
+    bot.add_cog(Gog(bot))
+    bot.add_cog(Steam(bot))
 
 class GameSearch:
     """Module that's used to search games from gog.com and steam"""
@@ -55,65 +56,15 @@ class GameSearch:
         re_string += all
         return re_string
 
-    @commands.command(pass_context=True)
-    @commands.cooldown(1, 5.0, commands.BucketType.server)
-    async def gog(self, ctx, *args):
-        """Search gogcom games
-        usage: !gog <query> optionally specify links=<number> for amount of links or simply !gog for random store pag or simply !gog for random store page"""
-        query, results = self.formquery(*args)
-        self.bot.logger.info(query)
-        gogsearch = Gog(self.bot)
-        if not query:
-            url = gogsearch.get_random()
-            await self.bot.send_message(ctx.message.channel, url + self.bot.config["gamesearch"]["gog_parameters"])
-            return
-        url = gogsearch.search(query)
-        query = gogsearch.get_json(url)
-        gamelist = gogsearch.parse_reply(query, results)
-        for game in gamelist:
-            await self.bot.send_message(ctx.message.channel, gogsearch.baseurl + game["url"] + self.bot.config["gamesearch"]["gog_parameters"])
-
-    @commands.command(pass_context=True)
-    @commands.cooldown(1, 5.0, commands.BucketType.server)
-    async def steam(self, ctx, *args):
-        """Search steam games
-        usage: !steam <query> optionally specify links=<number> for amount of links"""
-        s = Steam(self.bot)
-        query, results = self.formquery(*args)
-        if not query:
-            return
-        try:
-            games = s.search(query)
-            if results > len(games):
-                results = len(games)
-            for index in range(results):
-                gameurl = s.baseurl + str(games[index]["id"])
-                await self.bot.say(gameurl)
-                time.sleep(3)
-        except FileNotFoundError:
-            await self.bot.send_message(ctx.message.channel, "can't find jsonpath")
-
-    @commands.command(pass_context=True)
-    @commands.cooldown(1, 5.0, commands.BucketType.server)
-    async def updatesteam(self, ctx, *args):
-        """command to update steam game database
-        usage: updatesteam"""
-        s = Steam(self.bot)
-        try:
-            s.refreshapps()
-            await self.bot.send_message(ctx.message.channel, "jsonfile updated!")
-        except Exception as e:
-            await self.bot.say(e.__cause__)
-            await self.bot.say(e.__context__)
-
 class Gog(GameSearch):
     
     def __init__(self, bot, *args):
-        super().__init__(self, bot, args)
+        super().__init__(self, bot)
         self.apiurl = "http://embed.gog.com/games/ajax/filtered?mediaType=game&search="
         self.baseurl = "http://www.gog.com"
         self.safe = re.compile("[^a-zA-Z0-9\s+]")
         self.config = bot.config
+        self.bot = bot
     
     def parse_reply(self, data, results):
         """parses the gog response into list of games
@@ -160,13 +111,29 @@ class Gog(GameSearch):
         gamedata = json.loads(re.text)
         return gamedata["links"]["product_card"]
 
+    @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
+    async def gog(self, ctx, *args):
+        """Search gogcom games
+        usage: !gog <query> optionally specify links=<number> for amount of links or simply !gog for random store pag or simply !gog for random store page"""
+        query, results = self.formquery(*args)
+        self.bot.logger.info(query)
+        if not query:
+            url = self.get_random()
+            await self.bot.send_message(ctx.message.channel, url + self.bot.config["gamesearch"]["gog_parameters"])
+            return
+        url = self.search(query)
+        query = self.get_json(url)
+        gamelist = self.parse_reply(query, results)
+        for game in gamelist:
+            await self.bot.send_message(ctx.message.channel, self.baseurl + game["url"] + self.bot.config["gamesearch"]["gog_parameters"])
 
 
 class Steam(GameSearch):
     """Submodule for fetching Steam game from store"""
             
     def __init__(self, bot, *args):
-         super().__init__(self, args)
+         super().__init__(self, bot)
          self.bot = bot
          self.apiurl = "https://api.steampowered.com"
          self.baseurl = "https://store.steampowered.com/app/"
@@ -228,3 +195,36 @@ class Steam(GameSearch):
         jsondata = self.get_json(jsonurl)
         with open(jsonpath, "wb") as jsonfile:
             pickle.dump(jsondata, jsonfile)
+
+    @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
+    async def steam(self, ctx, *args):
+        """Search steam games
+        usage: !steam <query> optionally specify links=<number> for amount of links"""
+        query, results = self.formquery(*args)
+        if not query:
+            return
+        try:
+            games = self.search(query)
+            if results > len(games):
+                results = len(games)
+            for index in range(results):
+                gameurl = self.baseurl + str(games[index]["id"])
+                await self.bot.say(gameurl)
+                time.sleep(3)
+        except FileNotFoundError:
+            await self.bot.send_message(ctx.message.channel, "can't find jsonpath")
+
+    @commands.command(pass_context=True)
+    @commands.cooldown(1, 5.0, commands.BucketType.server)
+    async def updatesteam(self, ctx, *args):
+        """command to update steam game database
+        usage: updatesteam"""
+        try:
+            self.refreshapps()
+            await self.bot.send_message(ctx.message.channel, "jsonfile updated!")
+        except Exception as e:
+            await self.bot.say(e.__cause__)
+            await self.bot.say(e.__context__)
+
+
