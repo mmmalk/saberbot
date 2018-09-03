@@ -56,6 +56,7 @@ class GameSearch:
         re_string += all
         return re_string
 
+
 class Gog(GameSearch):
     
     def __init__(self, bot, *args):
