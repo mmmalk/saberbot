@@ -59,7 +59,7 @@ class GameSearch:
     @commands.cooldown(1, 5.0, commands.BucketType.server)
     async def gog(self, ctx, *args):
         """Search gogcom games
-        usage: !gog <query> optionally specify links=<number> for amount of links or simply !gog for random store pag or simply !gog for random store page"""
+        usage: !gog <query> optionally specify links=<number> for amount of links or simply !gog for random store page"""
         query, results = self.formquery(*args)
         self.bot.logger.info(query)
         gogsearch = Gog(self.bot)
