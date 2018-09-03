@@ -149,7 +149,7 @@ class Steam(GameSearch):
             querylist[querylist.index(word)] = self.safe.sub("", word).lower() #remove anything but alphanumerics, make it lowercase
         regex_str = self.formregex(querylist)
         query_regex = re.compile(regex_str)
-        jsonpath = path.abspath("tmp/steamapps")
+        jsonpath = self.bot.config["gamesearch"]["jsonpath"]
         with open(jsonpath, "rb") as jsonfile: #could also use get_json
             applist = pickle.load(jsonfile)    #but then you'd fetch whole appid list each time function gets called
         results = self.parseapplist(query_regex, applist)
